@@ -1,0 +1,47 @@
+function doPost(e) {
+  const id = '1csU-c0';
+  const ss = SpreadsheetApp.openById(id).getSheetByName('emails');
+  const sheetdata = ss.getDataRange().getValues();
+  const json = JSON.parse(e.postData.contents);
+  json.status = 'success';
+  const holder = [];
+  sheetdata[0].forEach((heading, index) => {
+    if (json[heading]) holder[index] = (json[heading]);
+  })
+  ss.appendRow(holder);
+  json.rowval = ss.getLastRow();
+  json.result = sendMyEmail(json);
+  return ContentService.createTextOutput(JSON.stringify(json)).setMimeType(ContentService.MimeType.JSON);
+}
+
+
+function sendMyEmail(data) {
+  let emailBody = `<div>Name ${data.name}</div>`;
+  emailBody += `<div>Email ${data.email}</div>`;
+  emailBody += `<div>Message ${data.message}</div>`;
+  MailApp.sendEmail({
+    to: 'gappscourses@gmail.com',
+    subject: 'NEW Web Form Email',
+    htmlBody: emailBody
+  });
+  if (validateEmail(data.email)) {
+    let repHTML = `<h2>Thank you ${data.name}</h2>`;
+    repHTML += `<div>We will respond shortly. Message received ID ${data.rowval}</div>`;
+    MailApp.sendEmail({
+      to: data.email,
+      subject: 'Thank you for your email',
+      htmlBody: repHTML
+    });
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function validateEmail(email) {
+  const re = /\S+@\S+\.\S+/;
+  return re.test(email);
+}
+function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify(e)).setMimeType(ContentService.MimeType.JSON);
+}
